@@ -1,0 +1,156 @@
+
+
+use data;
+select * from rawdata;
+
+
+SELECT ParcelID,COUNT(*) as RecordCount
+FROM rawdata
+GROUP BY ParcelID
+having count(*)>1;
+
+select PropertyAddress,ParcelId,UniqueID
+from rawdata
+where PropertyAddress IS NULL;
+
+select r1.ParcelID,r1.PropertyAddress,r2.ParcelID,r2.PropertyAddress,ISNULL(r1.PropertyAddress,r2.PropertyAddress)
+from rawdata r1
+JOIN rawdata r2
+on r1.ParcelId=r2.ParcelID
+AND r1.UniqueID<>r2.UniqueID
+where r1.PropertyAddress IS NULL;
+
+update r1
+set PropertyAddress=ISNULL(r1.PropertyAddress,r2.PropertyAddress)
+from rawdata r1
+JOIN rawdata r2
+on r1.ParcelId=r2.ParcelID
+AND r1.UniqueID<>r2.UniqueID
+where r1.PropertyAddress IS NULL;
+
+
+select 
+SUBSTRING(PropertyAddress,1,CHARINDEX(',',PropertyAddress) - 1) as address,
+SUBSTRING(PropertyAddress,CHARINDEX(',',PropertyAddress) +1  ,LEN(PropertyAddress)) as addre
+from rawdata;
+
+alter table rawdata
+add addresssplitaddress NVARCHAR(255);
+update rawdata
+set addresssplitaddress=SUBSTRING(PropertyAddress,1,CHARINDEX(',',PropertyAddress) - 1) ;
+
+alter table rawdata
+add addresssplitcity NVARCHAR(225);
+
+
+update rawdata
+set addresssplitcity=SUBSTRING(PropertyAddress,CHARINDEX(',',PropertyAddress) +1  ,LEN(PropertyAddress));
+
+alter table rawdata
+drop column  PropertryAddress;
+
+
+WITH duplicate_cte AS(
+Select *,
+	ROW_NUMBER() OVER (
+	PARTITION BY
+	             UniqueID,
+				 LandUse,
+				 SaleDate,
+				 SalePrice,
+				 LegalReference,
+				 SoldAsVacant,
+				 OwnerName,
+				 Acreage,
+				 TaxDistrict,
+				 LandValue,
+				 BuildingValue,
+				 TotalValue,
+				 YearBuilt,
+				 Bedrooms,
+				 FullBath,
+				 HalfBath,
+				 addresssplitaddress,
+				 addresssplitcity,
+	             ParcelID,
+				 PropertyAddress,
+				 SalePrice,
+				 SaleDate,
+				 LegalReference
+				 ORDER BY
+					UniqueID
+					) row_num
+
+From rawdata
+
+)
+
+
+
+select *
+from duplicate_cte;
+
+select * into rawdata2 from rawdata
+where 1=0;
+
+select * from rawdata2;
+alter table rawdata2
+add row_num INT;
+insert into rawdata2
+Select *,
+	ROW_NUMBER() OVER (
+	PARTITION BY
+	             UniqueID,
+				 LandUse,
+				 SaleDate,
+				 SalePrice,
+				 LegalReference,
+				 SoldAsVacant,
+				 OwnerName,
+				 Acreage,
+				 TaxDistrict,
+				 LandValue,
+				 BuildingValue,
+				 TotalValue,
+				 YearBuilt,
+				 Bedrooms,
+				 FullBath,
+				 HalfBath,
+				 addresssplitaddress,
+				 addresssplitcity,
+	             ParcelID,
+				 PropertyAddress,
+				 SalePrice,
+				 SaleDate,
+				 LegalReference
+				 ORDER BY
+					UniqueID
+					) row_num
+
+From rawdata;
+
+alter table rowdata2
+drop column row_num;
+select * from rawdata2;
+alter table duplicate_cte
+drop column row_num;
+
+
+
+
+
+
+
+
+
+
+select * from rawdata2;
+alter table rawdata2
+drop column row_num;
+
+update rawdata2
+set SaleDate=CONVERT(DATE,SaleDate);
+
+
+
+
